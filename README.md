@@ -8,7 +8,7 @@ The implementation of a Generic QSPI interface, plus testbench
 We need a Generic QSPI (not a memory chip specific QSPI, e.g. via the AMD/Xilinx
  axi_quad_spi block (which is hard-coded for specific chips).
 We need a QSPI which supports:
-* send any 8bit CMD via single lane (or even a 4-lane, as 1-4-4 or 4-4-4)
+* send any 8bit CMD via single lane (or even as 4-lane CMD, as 1-4-4 or 4-4-4)
 * send a 32bit ADDR (on all 4 lanes)
 * send a 24bit ALT word (on all lanes - axi_quad_spi IP block does not support)
 * send a 2 clock cycle turnaround (axi_quad_spi IP block does not support)
