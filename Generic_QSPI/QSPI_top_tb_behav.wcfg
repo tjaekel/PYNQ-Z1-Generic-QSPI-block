@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="QSPI_top_tb_behav.wdb" id="1">
+         <top_modules>
+            <top_module name="QSPI_top_tb" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="50,629,898.000 ns"></ZoomStartTime>
+      <ZoomEndTime time="50,632,670.001 ns"></ZoomEndTime>
+      <Cursor1Time time="50,630,560.000 ns"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="404"></NameColumnWidth>
+      <ValueColumnWidth column_width="176"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="18" />
+   <wvobject fp_name="/QSPI_top_tb/WR_REG" type="array">
+      <obj_property name="ElementShortName">WR_REG[31:0]</obj_property>
+      <obj_property name="ObjectShortName">WR_REG[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/QSPI_top_tb/CTL_REG" type="array">
+      <obj_property name="ElementShortName">CTL_REG[31:0]</obj_property>
+      <obj_property name="ObjectShortName">CTL_REG[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/QSPI_top_tb/S_CLK" type="logic">
+      <obj_property name="ElementShortName">S_CLK</obj_property>
+      <obj_property name="ObjectShortName">S_CLK</obj_property>
+   </wvobject>
+   <wvobject fp_name="/QSPI_top_tb/RD_REG" type="array">
+      <obj_property name="ElementShortName">RD_REG[31:0]</obj_property>
+      <obj_property name="ObjectShortName">RD_REG[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/QSPI_top_tb/STS_REG" type="array">
+      <obj_property name="ElementShortName">STS_REG[31:0]</obj_property>
+      <obj_property name="ObjectShortName">STS_REG[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/QSPI_top_tb/QCLK" type="logic">
+      <obj_property name="ElementShortName">QCLK</obj_property>
+      <obj_property name="ObjectShortName">QCLK</obj_property>
+   </wvobject>
+   <wvobject fp_name="/QSPI_top_tb/QD" type="array">
+      <obj_property name="ElementShortName">QD[3:0]</obj_property>
+      <obj_property name="ObjectShortName">QD[3:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/QSPI_top_tb/CS" type="array">
+      <obj_property name="ElementShortName">CS[3:0]</obj_property>
+      <obj_property name="ObjectShortName">CS[3:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/QSPI_top_tb/inCntPattern" type="array">
+      <obj_property name="ElementShortName">inCntPattern[3:0]</obj_property>
+      <obj_property name="ObjectShortName">inCntPattern[3:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/QSPI_top_tb/S_CLK_HALF_PERIOD" type="other">
+      <obj_property name="ElementShortName">S_CLK_HALF_PERIOD</obj_property>
+      <obj_property name="ObjectShortName">S_CLK_HALF_PERIOD</obj_property>
+   </wvobject>
+   <wvobject fp_name="/QSPI_top_tb/CLK_DIV" type="other">
+      <obj_property name="ElementShortName">CLK_DIV</obj_property>
+      <obj_property name="ObjectShortName">CLK_DIV</obj_property>
+   </wvobject>
+   <wvobject fp_name="/QSPI_top_tb/CLK_DIV_OFFSET" type="other">
+      <obj_property name="ElementShortName">CLK_DIV_OFFSET</obj_property>
+      <obj_property name="ObjectShortName">CLK_DIV_OFFSET</obj_property>
+   </wvobject>
+   <wvobject fp_name="/QSPI_top_tb/DLY_FACTOR" type="other">
+      <obj_property name="ElementShortName">DLY_FACTOR</obj_property>
+      <obj_property name="ObjectShortName">DLY_FACTOR</obj_property>
+   </wvobject>
+   <wvobject fp_name="/QSPI_top_tb/UUT/State" type="other">
+      <obj_property name="ElementShortName">State</obj_property>
+      <obj_property name="ObjectShortName">State</obj_property>
+   </wvobject>
+   <wvobject fp_name="/QSPI_top_tb/UUT/ClockDiv" type="other">
+      <obj_property name="ElementShortName">ClockDiv</obj_property>
+      <obj_property name="ObjectShortName">ClockDiv</obj_property>
+   </wvobject>
+   <wvobject fp_name="/QSPI_top_tb/UUT/ShiftCounter" type="other">
+      <obj_property name="ElementShortName">ShiftCounter</obj_property>
+      <obj_property name="ObjectShortName">ShiftCounter</obj_property>
+   </wvobject>
+   <wvobject fp_name="/QSPI_top_tb/UUT/DataShiftIn" type="array">
+      <obj_property name="ElementShortName">DataShiftIn[31:0]</obj_property>
+      <obj_property name="ObjectShortName">DataShiftIn[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/QSPI_top_tb/UUT/Direction" type="logic">
+      <obj_property name="ElementShortName">Direction</obj_property>
+      <obj_property name="ObjectShortName">Direction</obj_property>
+   </wvobject>
+</wave_config>

@@ -3,25 +3,7 @@
   <spirit:vendor>xilinx.com</spirit:vendor>
   <spirit:library>user</spirit:library>
   <spirit:name>QSPI_top</spirit:name>
-  <spirit:version>1.1</spirit:version>
-  <spirit:busInterfaces>
-    <spirit:busInterface>
-      <spirit:name>P_CLK</spirit:name>
-      <spirit:busType spirit:vendor="xilinx.com" spirit:library="signal" spirit:name="clock" spirit:version="1.0"/>
-      <spirit:abstractionType spirit:vendor="xilinx.com" spirit:library="signal" spirit:name="clock_rtl" spirit:version="1.0"/>
-      <spirit:slave/>
-      <spirit:portMaps>
-        <spirit:portMap>
-          <spirit:logicalPort>
-            <spirit:name>CLK</spirit:name>
-          </spirit:logicalPort>
-          <spirit:physicalPort>
-            <spirit:name>P_CLK</spirit:name>
-          </spirit:physicalPort>
-        </spirit:portMap>
-      </spirit:portMaps>
-    </spirit:busInterface>
-  </spirit:busInterfaces>
+  <spirit:version>1.3</spirit:version>
   <spirit:model>
     <spirit:views>
       <spirit:view>
@@ -141,7 +123,7 @@
         </spirit:wire>
       </spirit:port>
       <spirit:port>
-        <spirit:name>P_CLK</spirit:name>
+        <spirit:name>S_CLK</spirit:name>
         <spirit:wire>
           <spirit:direction>in</spirit:direction>
           <spirit:wireTypeDefs>
@@ -200,19 +182,6 @@
           </spirit:wireTypeDefs>
         </spirit:wire>
       </spirit:port>
-      <spirit:port>
-        <spirit:name>QCLKfb</spirit:name>
-        <spirit:wire>
-          <spirit:direction>in</spirit:direction>
-          <spirit:wireTypeDefs>
-            <spirit:wireTypeDef>
-              <spirit:typeName>STD_LOGIC</spirit:typeName>
-              <spirit:viewNameRef>xilinx_anylanguagesynthesis</spirit:viewNameRef>
-              <spirit:viewNameRef>xilinx_anylanguagebehavioralsimulation</spirit:viewNameRef>
-            </spirit:wireTypeDef>
-          </spirit:wireTypeDefs>
-        </spirit:wire>
-      </spirit:port>
     </spirit:ports>
   </spirit:model>
   <spirit:fileSets>
@@ -221,7 +190,7 @@
       <spirit:file>
         <spirit:name>QSPI_top.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
-        <spirit:userFileType>CHECKSUM_5ced80e4</spirit:userFileType>
+        <spirit:userFileType>CHECKSUM_8b9dd421</spirit:userFileType>
       </spirit:file>
     </spirit:fileSet>
     <spirit:fileSet>
@@ -241,7 +210,7 @@
       </spirit:file>
     </spirit:fileSet>
   </spirit:fileSets>
-  <spirit:description>QSPI_top_v1_0</spirit:description>
+  <spirit:description>QSPI_top_v1_3</spirit:description>
   <spirit:parameters>
     <spirit:parameter>
       <spirit:name>Component_Name</spirit:name>
@@ -271,13 +240,13 @@
       <xilinx:taxonomies>
         <xilinx:taxonomy>/UserIP</xilinx:taxonomy>
       </xilinx:taxonomies>
-      <xilinx:displayName>QSPI_top_v1_0</xilinx:displayName>
+      <xilinx:displayName>QSPI_top_v1_3</xilinx:displayName>
       <xilinx:definitionSource>package_project</xilinx:definitionSource>
       <xilinx:coreRevision>1</xilinx:coreRevision>
       <xilinx:upgrades>
         <xilinx:canUpgradeFrom>xilinx.com:user:QSPI_top:1.0</xilinx:canUpgradeFrom>
       </xilinx:upgrades>
-      <xilinx:coreCreationDateTime>2024-11-08T06:32:51Z</xilinx:coreCreationDateTime>
+      <xilinx:coreCreationDateTime>2024-11-19T22:50:27Z</xilinx:coreCreationDateTime>
       <xilinx:tags>
         <xilinx:tag xilinx:name="nopcore"/>
       </xilinx:tags>

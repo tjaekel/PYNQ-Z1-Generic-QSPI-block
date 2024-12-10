@@ -45,19 +45,21 @@ port (
         RD_REG : out STD_LOGIC_VECTOR (31 downto 0);
         CTL_REG : in STD_LOGIC_VECTOR (31 downto 0);
         STS_REG : out STD_LOGIC_VECTOR (31 downto 0);
-        P_CLK : in STD_LOGIC;
+        --P_CLK : in STD_LOGIC;
+        S_CLK : in STD_LOGIC;
         --external signals
         QCLK : out STD_LOGIC;
         QD : inout STD_LOGIC_VECTOR (3 downto 0);
-        CS : out STD_LOGIC_VECTOR (3 downto 0);
-        QCLKfb : in STD_LOGIC
+        CS : out STD_LOGIC_VECTOR (3 downto 0)
+        --QCLKfb : in STD_LOGIC
       );
 end component;
 
 --Inputs
 signal WR_REG : STD_LOGIC_VECTOR (31 downto 0) := (others => '0');
 signal CTL_REG : STD_LOGIC_VECTOR (31 downto 0) := x"00000000";
-signal P_CLK : STD_LOGIC := '0';
+--signal P_CLK : STD_LOGIC := '0';
+signal S_CLK : STD_LOGIC := '0';
 
 --Outputs
 signal RD_REG : STD_LOGIC_VECTOR (31 downto 0);
@@ -65,32 +67,39 @@ signal STS_REG : STD_LOGIC_VECTOR (31 downto 0);
 signal QCLK : STD_LOGIC;
 signal QD : STD_LOGIC_VECTOR (3 downto 0);
 signal CS : STD_LOGIC_VECTOR (3 downto 0);
-signal QCLKfb : STD_LOGIC;
+--signal QCLKfb : STD_LOGIC;
 
 signal inCntPattern : STD_LOGIC_VECTOR (3 downto 0) := x"0";
 
-constant P_CLK_HALF_PERIOD : TIME := 13 ns;    --our P_CLK half period
+constant S_CLK_HALF_PERIOD : TIME := 20 ns;
+constant CLK_DIV : integer := 7;
+constant CLK_DIV_OFFSET : integer := 1;
+constant P_CLK_HALF_PERIOD_H : TIME := S_CLK_HALF_PERIOD * 2 * (CLK_DIV + CLK_DIV_OFFSET);
+                                     --our P_CLK half period: S_CLK divded by 2, CLK_DIV = 7 plus 3!
+constant P_CLK_HALF_PERIOD_L : TIME := S_CLK_HALF_PERIOD * 2 * (CLK_DIV + CLK_DIV_OFFSET + 2);
+constant DLY_FACTOR : INTEGER := 3;  --delay QD response for read to simulate late response
 
 begin
 
 UUT: QSPI_top PORT MAP (
     WR_REG => WR_REG,
     CTL_REG => CTL_REG,
-    P_CLK => P_CLK,
+    --P_CLK => P_CLK,
+    S_CLK => S_CLK,
     RD_REG => RD_REG,
     STS_REG => STS_REG,
     QCLK => QCLK,
     QD => QD,
-    CS => CS,
-    QCLKfb => QCLKfb
+    CS => CS
+    --QCLKfb => QCLKfb
 );
 
 clock_proc: process
 begin
- P_CLK <= '1';
- wait for P_CLK_HALF_PERIOD;        --make it a not-synchronized clock
- P_CLK <= '0';
- wait for P_CLK_HALF_PERIOD;
+ S_CLK <= '1';
+ wait for S_CLK_HALF_PERIOD;        --make it a not-synchronized clock
+ S_CLK <= '0';
+ wait for S_CLK_HALF_PERIOD;
 end process;
 
 --Stimulus process
@@ -100,64 +109,68 @@ begin
  --wait for 100 ns;
 
  WR_REG <= x"10010110";             --write CMD: encode properly: 0x96 = b'10010110 (just lane 0)
- CTL_REG <= x"8000000E";            --nCS low
- wait for P_CLK_HALF_PERIOD*3;
- CTL_REG <= x"0000000E";            --nCS low
- wait for 500 ns;
+ CTL_REG <= x"8000070E";            --nCS low
+ wait for P_CLK_HALF_PERIOD_H;
+ CTL_REG <= x"0000070E";            --nCS low
+ wait for P_CLK_HALF_PERIOD_H*20;
  
  WR_REG <= x"9ABCDEF0";             --32bit address
- CTL_REG <= x"8000000E";
- wait for P_CLK_HALF_PERIOD*3;
- CTL_REG <= x"0000000E";
- wait for 500 ns;
+ CTL_REG <= x"8000070E";
+ wait for P_CLK_HALF_PERIOD_H;
+ CTL_REG <= x"0000070E";
+ wait for P_CLK_HALF_PERIOD_H*20;
  
  --a 24bit write
  WR_REG <= x"87654321";             --24bit taken from MSB (lowest 8 bit ignored)
- CTL_REG <= x"8000000E";
- wait for P_CLK_HALF_PERIOD*3;
- CTL_REG <= x"0000001E";            --set 24bit word size to write
- wait for 500 ns;
+ CTL_REG <= x"8000070E";
+ wait for P_CLK_HALF_PERIOD_H;
+ CTL_REG <= x"0000071E";            --set 24bit word size to write
+ wait for P_CLK_HALF_PERIOD_H*16;
  
  --a 2bit turnaround
- WR_REG <= x"ABCDEF01";             --any value is OK, no need to set
- CTL_REG <= x"8000000E";
- wait for P_CLK_HALF_PERIOD*3;
- CTL_REG <= x"0000002E";            --set turnaround bit and generate two turnaround cycles
- wait for P_CLK_HALF_PERIOD*12;
- 
-  --a 32bit read
  WR_REG <= x"00000000";             --any value is OK, no need to set
- CTL_REG <= x"8000000E";
- wait for P_CLK_HALF_PERIOD*3;
- CTL_REG <= x"0000004E";            --set 32bit read
+ CTL_REG <= x"8000070E";
+ wait for P_CLK_HALF_PERIOD_H;
+ CTL_REG <= x"0000072E";            --set turnaround bit and generate two turnaround cycles
+ wait for P_CLK_HALF_PERIOD_H*6;
  
- wait for P_CLK_HALF_PERIOD*5;      --on TB: consider delay when it becomes active
+ --a 32bit read
+ --WR_REG <= x"00000000";             --any value is OK, no need to set
+ CTL_REG <= x"8000070E";
+ wait for P_CLK_HALF_PERIOD_H * 4;
+ CTL_REG <= x"0000074E";            --set 32bit read
+ 
+ wait for S_CLK_HALF_PERIOD;
+ wait for S_CLK_HALF_PERIOD*DLY_FACTOR;      --on TB: consider delay when it becomes active
  QD <= x"A";                        --drive QD signals from outside
- wait for P_CLK_HALF_PERIOD*4;      --wait a full clock cycle on P_CLK!
+ wait for P_CLK_HALF_PERIOD_H;        --wait a full clock cycle on P_CLK!
+ QD <= "ZZZZ";
+ wait for P_CLK_HALF_PERIOD_L;
  QD <= x"B";
- wait for P_CLK_HALF_PERIOD*4;
+ wait for P_CLK_HALF_PERIOD_H + P_CLK_HALF_PERIOD_L;
  QD <= x"C";
- wait for P_CLK_HALF_PERIOD*4;
+ wait for P_CLK_HALF_PERIOD_H + P_CLK_HALF_PERIOD_L;
  QD <= x"D";
- wait for P_CLK_HALF_PERIOD*4;
+ wait for P_CLK_HALF_PERIOD_H + P_CLK_HALF_PERIOD_L;
  QD <= x"E";
- wait for P_CLK_HALF_PERIOD*4;
+ wait for P_CLK_HALF_PERIOD_H + P_CLK_HALF_PERIOD_L;
  QD <= x"F";
- wait for P_CLK_HALF_PERIOD*4;
+ wait for P_CLK_HALF_PERIOD_H + P_CLK_HALF_PERIOD_L;
  QD <= x"1";
- wait for P_CLK_HALF_PERIOD*4;
- --QD <= x"2";
+ wait for P_CLK_HALF_PERIOD_H + P_CLK_HALF_PERIOD_L;
  QD <= inCntPattern;
  inCntPattern <= inCntPattern + '1';
- wait for P_CLK_HALF_PERIOD*4;
+ wait for P_CLK_HALF_PERIOD_H;
+ QD <= "ZZZZ";
+ 
+ wait for P_CLK_HALF_PERIOD_H;
  QD <= "ZZZZ";                      --release external QSPI bus
- --wait for P_CLK_HALF_PERIOD;
 
- WR_REG <= x"00000000";             --any value is OK, no need to set
- CTL_REG <= x"0000000F";            --nCS high
- wait for P_CLK_HALF_PERIOD*6;
+ WR_REG  <= x"00000000";            --any value is OK, no need to set
+ CTL_REG <= x"0000070F";            --nCS high
+ wait for P_CLK_HALF_PERIOD_H*4;
 end process;
 
-QCLKfb <= QCLK after P_CLK_HALF_PERIOD*2;
+--QCLKfb <= QCLK after S_CLK_HALF_PERIOD*DLY_FACTOR;
 
 end Behavioral;
