@@ -76,7 +76,7 @@ constant CLK_DIV : integer := 7;
 constant CLK_DIV_OFFSET : integer := 1;
 constant P_CLK_HALF_PERIOD_H : TIME := S_CLK_HALF_PERIOD * 2 * (CLK_DIV + CLK_DIV_OFFSET);
                                      --our P_CLK half period: S_CLK divded by 2, CLK_DIV = 7 plus 3!
-constant P_CLK_HALF_PERIOD_L : TIME := S_CLK_HALF_PERIOD * 2 * (CLK_DIV + CLK_DIV_OFFSET + 2);
+constant P_CLK_HALF_PERIOD_L : TIME := S_CLK_HALF_PERIOD * 2 * (CLK_DIV + CLK_DIV_OFFSET);
 constant DLY_FACTOR : INTEGER := 3;  --delay QD response for read to simulate late response
 
 begin
@@ -110,37 +110,37 @@ begin
 
  WR_REG <= x"10010110";             --write CMD: encode properly: 0x96 = b'10010110 (just lane 0)
  CTL_REG <= x"8000070E";            --nCS low
- wait for P_CLK_HALF_PERIOD_H;
- CTL_REG <= x"0000070E";            --nCS low
+ --wait for P_CLK_HALF_PERIOD_H;
+ --CTL_REG <= x"0000070E";            --nCS low
  wait for P_CLK_HALF_PERIOD_H*20;
  
  WR_REG <= x"9ABCDEF0";             --32bit address
- CTL_REG <= x"8000070E";
- wait for P_CLK_HALF_PERIOD_H;
- CTL_REG <= x"0000070E";
+ CTL_REG <= x"0000070E";            --Test: bit 7 = 1 should flip the bytes
+ --wait for P_CLK_HALF_PERIOD_H;
+ --CTL_REG <= x"0000070E";
  wait for P_CLK_HALF_PERIOD_H*20;
  
  --a 24bit write
  WR_REG <= x"87654321";             --24bit taken from MSB (lowest 8 bit ignored)
- CTL_REG <= x"8000070E";
- wait for P_CLK_HALF_PERIOD_H;
- CTL_REG <= x"0000071E";            --set 24bit word size to write
- wait for P_CLK_HALF_PERIOD_H*16;
+ CTL_REG <= x"4000071E";
+ --wait for P_CLK_HALF_PERIOD_H;
+ --CTL_REG <= x"0000071E";            --set 24bit word size to write
+ wait for P_CLK_HALF_PERIOD_H*20;
  
  --a 2bit turnaround
  WR_REG <= x"00000000";             --any value is OK, no need to set
- CTL_REG <= x"8000070E";
- wait for P_CLK_HALF_PERIOD_H;
- CTL_REG <= x"0000072E";            --set turnaround bit and generate two turnaround cycles
+ CTL_REG <= x"8000072E";
+ --wait for P_CLK_HALF_PERIOD_H;
+ --CTL_REG <= x"0000072E";            --set turnaround bit and generate two turnaround cycles
  wait for P_CLK_HALF_PERIOD_H*6;
  
  --a 32bit read
  --WR_REG <= x"00000000";             --any value is OK, no need to set
- CTL_REG <= x"8000070E";
- wait for P_CLK_HALF_PERIOD_H * 4;
- CTL_REG <= x"0000074E";            --set 32bit read
+ CTL_REG <= x"000007CE";              --Test: bit 7 = 1 should flip the bytes
+ --wait for P_CLK_HALF_PERIOD_H * 4;
+ --CTL_REG <= x"0000074E";            --set 32bit read
  
- wait for S_CLK_HALF_PERIOD;
+ wait for S_CLK_HALF_PERIOD * 3;
  wait for S_CLK_HALF_PERIOD*DLY_FACTOR;      --on TB: consider delay when it becomes active
  QD <= x"A";                        --drive QD signals from outside
  wait for P_CLK_HALF_PERIOD_H;        --wait a full clock cycle on P_CLK!
