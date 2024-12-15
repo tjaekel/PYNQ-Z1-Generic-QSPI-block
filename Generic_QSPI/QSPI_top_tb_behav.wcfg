@@ -10,15 +10,15 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="50,629,898.000 ns"></ZoomStartTime>
-      <ZoomEndTime time="50,632,670.001 ns"></ZoomEndTime>
-      <Cursor1Time time="50,630,560.000 ns"></Cursor1Time>
+      <ZoomStartTime time="26,647,438.334 ns"></ZoomStartTime>
+      <ZoomEndTime time="26,661,368.335 ns"></ZoomEndTime>
+      <Cursor1Time time="26,649,760.000 ns"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="404"></NameColumnWidth>
-      <ValueColumnWidth column_width="176"></ValueColumnWidth>
+      <ValueColumnWidth column_width="162"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="18" />
+   <WVObjectSize size="20" />
    <wvobject fp_name="/QSPI_top_tb/WR_REG" type="array">
       <obj_property name="ElementShortName">WR_REG[31:0]</obj_property>
       <obj_property name="ObjectShortName">WR_REG[31:0]</obj_property>
@@ -90,5 +90,13 @@
    <wvobject fp_name="/QSPI_top_tb/UUT/Direction" type="logic">
       <obj_property name="ElementShortName">Direction</obj_property>
       <obj_property name="ObjectShortName">Direction</obj_property>
+   </wvobject>
+   <wvobject fp_name="/QSPI_top_tb/UUT/RxState" type="other">
+      <obj_property name="ElementShortName">RxState</obj_property>
+      <obj_property name="ObjectShortName">RxState</obj_property>
+   </wvobject>
+   <wvobject fp_name="/QSPI_top_tb/UUT/QDdataIn" type="array">
+      <obj_property name="ElementShortName">QDdataIn[3:0]</obj_property>
+      <obj_property name="ObjectShortName">QDdataIn[3:0]</obj_property>
    </wvobject>
 </wave_config>

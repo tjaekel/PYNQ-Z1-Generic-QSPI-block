@@ -50,6 +50,7 @@ entity QSPI_top is
            QCLK : out STD_LOGIC;
            QD : inout STD_LOGIC_VECTOR (3 downto 0);
            CS : out STD_LOGIC_VECTOR (3 downto 0)
+           --DIR : out STD_LOGIC  --generate DIR for level shifter
          );
 end QSPI_top;
 
@@ -61,16 +62,17 @@ end QSPI_top;
 -- bit 6 : - generate a 32bit RD
 -- bit 5 : - generate a 2bit TurnAround
 -- bit 4 : - generate a 24bit ALT
---       : it not bit 6..4 set: generate a 32bit WR
+--         - you can set bit 4 and 5 together - creates 8 cycles with both
+--       : - if not bit 6..4 set: generate a 32bit WR
 -- bit [3:0] - nCS signals - if all are "1111" - reset (TriggerCnt = 0)
 
 --STS_REG:
 -- bit 31 : busy
--- bit 0  : ready (shift out or shift in done)
+-- bit 0  : ready (shift out or shift in done), 0x80000000 or 0x00000001, 0x00000000 (Idle) not used
 
 architecture Behavioral of QSPI_top is
 
-type t_State is (WriteStrobe, ShiftOutA, ShiftOutD, ShiftOutD2, Idle);
+type t_State is (WriteStrobe, ShiftOutD, ShiftOutD2, Idle);
 signal State : t_State := Idle;
 
 type t_StateRx is (ReadIdle, Idle);
@@ -82,7 +84,6 @@ signal ShiftCounter : integer range 0 to 8 := 8;
 signal QDdataOut    : STD_LOGIC_VECTOR(3 downto 0);
 signal QDdataIn     : STD_LOGIC_VECTOR(3 downto 0);
 signal Direction    : STD_LOGIC := '1';                 -- '1' is input, '0' is output
-signal xDirection   : STD_LOGIC := '1'; 
 signal ClockDiv     : integer range 0 to 31 := 7;       --7 results in 7+1 half clock cycles on QCLK
 signal TriggerCnt   : STD_LOGIC_VECTOR(1 downto 0) := (others => '0');
 
@@ -141,7 +142,6 @@ port map (
         if (rising_edge(S_CLK)) then
             case State is
                 when Idle =>
-                    STS_REG <= x"00000001";                     --shift ready, clear busy flag
                     CS <= CTL_REG(3 downto 0);                  --drive nCS
                     if CTL_REG(3 downto 0) = "1111" then
                         TriggerCnt <= (others => '0');          --reset
@@ -150,44 +150,41 @@ port map (
                         TriggerCnt <= CTL_REG(31 downto 30);
                         if CTL_REG(31 downto 30) /= TriggerCnt then
                             QCLK <= '0';
-                            STS_REG <= x"80000000";                 --set busy flag
                             ClockDiv <= to_integer(unsigned(CTL_REG(12 downto 8)));
                             State <= WriteStrobe;
                         end if;
                     end if;
                     
                 when WriteStrobe =>
-                    --we could use bit (7) for little endian write and read, flip bytes
+                    Direction <= '0';
                     if CTL_REG(7) = '1' then
-                        DataShiftOut <= WR_REG(7 downto 0) & WR_REG(15 downto 8) & WR_REG(23 downto 16) & WR_REG(31 downto 24);
+                        DataShiftOut <= WR_REG(7 downto 4) & WR_REG(15 downto 8) & WR_REG(23 downto 16) & WR_REG(31 downto 24) & "0000";
                     else
-                        DataShiftOut <= WR_REG;
+                        DataShiftOut <= WR_REG(27 downto 0) & "0000";
                     end if;
-                    ShiftCounter <= 8;              --default
-                    xDirection <= '0';
-                    if CTL_REG(4) = '1' then
-                        ShiftCounter <= 6;          --24bit value (ALT)
+                    
+                    ShiftCounter <= 7;              --default
+                    Direction <= '0';               --default
+                    if CTL_REG(4) = '1' then        --24bit ALT
+                        ShiftCounter <= 5;
                     end if;
-                    if CTL_REG(5) = '1' then
-                        ShiftCounter <= 2;          --two turnaround bits
-                        xDirection <= '1';
+                    if CTL_REG(5) = '1' then        --2bit TA
+                        ShiftCounter <= 1;
+                        Direction <= '1';
                     end if;
-                    if CTL_REG(6) = '1' then
-                        ShiftCounter <= 8;          --32bit word read
-                        xDirection <= '1';
+                    if CTL_REG(6) = '1' then        --32bit Read
+                        Direction <= '1';
+                    end if;
+                    if CTL_REG(5 downto 4) = "11" then  --24bit ALT plus 2bit TA
+                        ShiftCounter <= 7;
+                        Direction <= '0';          --first 24bit out
                     end if;
                     ClockDiv <= to_integer(unsigned(CTL_REG(12 downto 8)));
-                    STS_REG(31) <= '0';             --clear busy flag
-                    State <= ShiftOutA;
-                
-                when ShiftOutA =>                 
-                    Direction <= xDirection;
-                    ShiftCounter <= ShiftCounter - 1;
-                    QDdataOut <= DataShiftOut(31 downto 28);
-                    DataShiftOut <= DataShiftOut(27 downto 0) & "0000";
+                    
+                    QDdataOut <= WR_REG(31 downto 28);
                     QCLK <= '1';
                     State <= ShiftOutD;
-                    
+
                 when ShiftOutD =>
                     if ClockDiv = 0 then
                         QCLK <= '0';
@@ -198,53 +195,57 @@ port map (
                     end if;
                     
                 when ShiftOutD2 =>
-                        if ShiftCounter = 0 then
-                            State <= Idle;
-                        else
-                            if ClockDiv = 0 then
-                            ShiftCounter <= ShiftCounter - 1;
-                            QDdataOut <= DataShiftOut(31 downto 28);
-                            DataShiftOut <= DataShiftOut(27 downto 0) & "0000";
-                            ClockDiv <= to_integer(unsigned(CTL_REG(12 downto 8)));
-                            QCLK <= '1';
-                            State <= ShiftOutD;
-                            else
-                                ClockDiv <= ClockDiv - 1;
+                    if ShiftCounter = 0 then
+                        State <= Idle;
+                    else
+                        if ClockDiv = 0 then
+                        ShiftCounter <= ShiftCounter - 1;
+                        QDdataOut <= DataShiftOut(31 downto 28);
+                        DataShiftOut <= DataShiftOut(27 downto 0) & "0000";
+                        ClockDiv <= to_integer(unsigned(CTL_REG(12 downto 8)));
+                        QCLK <= '1';
+                        
+                        if CTL_REG(5 downto 4) = "11" then
+                            --24bit ALT + 2bit TA together
+                            if ShiftCounter = 2 then
+                                Direction <= '1';
                             end if;
-                        end if;     
+                        end if;
+                        
+                        State <= ShiftOutD;
+                        else
+                            ClockDiv <= ClockDiv - 1;
+                        end if;
+                    end if;     
             end case;
         end if;
    end process;
 
-   --our Read sampling process: it samples the QDIN one S_CLK cycle later:
-   --compensate the delay in FPGA and external level shifters
-   process (S_CLK, State)
+   process (S_CLK, State, ShiftCounter)
    begin
         if (rising_edge(S_CLK)) then
             case RxState is
                 when Idle =>
                     if State = ShiftOutD2 then
-                        if CTL_REG(5) = '1' then
-                            DataShiftIn <= (others => '0');   --2bit turnaround - avoid 'X'
+                        if ShiftCounter = 0 then    
+                            if CTL_REG(7) = '1' then
+                                RD_REG <= DataShiftIn(3 downto 0) & QDdataIn & DataShiftIn(11 downto 4) & DataShiftIn(19 downto 12) & DataShiftIn(27 downto 20);
+                            else
+                                RD_REG <= DataShiftIn(27 downto 0) & QDdataIn;
+                            end if;
+                            STS_REG <= x"00000001";          --shift ready, clear busy flag           
                         else
                             DataShiftIn <= DataShiftIn(27 downto 0) & QDdataIn;
                         end if;
                         RxState <= ReadIdle;
                     end if;
                     if State = WriteStrobe then
-                        DataShiftIn <= (others => '0');
+                        STS_REG <= x"80000000";
+                        DataShiftIn <= (others => '0');       --just to make sure to be clean for next shift in
                     end if;
                     
                 when ReadIdle =>
-                    if State = ShiftOutD then
-                        RxState <= Idle;
-                    end if;
-                    if State = Idle then
-                        if CTL_REG(7) = '1' then
-                            RD_REG <= DataShiftIn(7 downto 0) & DataShiftIn(15 downto 8) & DataShiftIn(23 downto 16) & DataShiftIn(31 downto 24);
-                        else
-                            RD_REG <= DataShiftIn;
-                        end if;
+                    if State = ShiftOutD or State = Idle then
                         RxState <= Idle;
                     end if;
             end case;
@@ -253,5 +254,7 @@ port map (
    
     --QD <= QDdataOut when Direction = '0' else "ZZZZ";
     --QDdataIn <= QDdataOut when Direction = '0' else QD;
+    
+    --DIR <= Direction;
 
 end Behavioral;
