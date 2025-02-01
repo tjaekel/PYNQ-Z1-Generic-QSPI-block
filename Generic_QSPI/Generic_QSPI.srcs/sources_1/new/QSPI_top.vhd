@@ -49,8 +49,8 @@ entity QSPI_top is
            -- external output/input signals
            QCLK : out STD_LOGIC;
            QD : inout STD_LOGIC_VECTOR (3 downto 0);
-           CS : out STD_LOGIC_VECTOR (3 downto 0)
-           --DIR : out STD_LOGIC  --generate DIR for level shifter
+           CS : out STD_LOGIC_VECTOR (3 downto 0);
+           DIR : out STD_LOGIC_VECTOR (1 downto 0)  --generate DIR for level shifter
          );
 end QSPI_top;
 
@@ -137,6 +137,7 @@ port map (
    T => Direction         -- 3-state enable input, high=input, low=output
 );
 
+   --this is SPI mode 1 (not 0), changed for SPI mode 3
    process (S_CLK)
    begin
         if (rising_edge(S_CLK)) then
@@ -149,20 +150,21 @@ port map (
                     else
                         TriggerCnt <= CTL_REG(31 downto 30);
                         if CTL_REG(31 downto 30) /= TriggerCnt then
-                            QCLK <= '0';
+                            --QCLK <= '0';
+                            QCLK <= '1';
                             ClockDiv <= to_integer(unsigned(CTL_REG(12 downto 8)));
+                            
+                            if CTL_REG(7) = '1' then
+                                DataShiftOut <= WR_REG(7 downto 0) & WR_REG(15 downto 8) & WR_REG(23 downto 16) & WR_REG(31 downto 24);
+                            else
+                                DataShiftOut <= WR_REG(31 downto 0);
+                            end if;
                             State <= WriteStrobe;
                         end if;
                     end if;
                     
                 when WriteStrobe =>
                     Direction <= '0';
-                    if CTL_REG(7) = '1' then
-                        DataShiftOut <= WR_REG(7 downto 4) & WR_REG(15 downto 8) & WR_REG(23 downto 16) & WR_REG(31 downto 24) & "0000";
-                    else
-                        DataShiftOut <= WR_REG(27 downto 0) & "0000";
-                    end if;
-                    
                     ShiftCounter <= 7;              --default
                     Direction <= '0';               --default
                     if CTL_REG(4) = '1' then        --24bit ALT
@@ -180,14 +182,16 @@ port map (
                         Direction <= '0';          --first 24bit out
                     end if;
                     ClockDiv <= to_integer(unsigned(CTL_REG(12 downto 8)));
-                    
-                    QDdataOut <= WR_REG(31 downto 28);
-                    QCLK <= '1';
+                    QDdataOut <= DataShiftOut(31 downto 28);
+                    DataShiftOut <= DataShiftOut(27 downto 0) & "0000";
+                    --QCLK <= '1';
+                    QCLK <= '0';
                     State <= ShiftOutD;
 
                 when ShiftOutD =>
                     if ClockDiv = 0 then
-                        QCLK <= '0';
+                        --QCLK <= '0';
+                        QCLK <= '1';
                         ClockDiv <= to_integer(unsigned(CTL_REG(12 downto 8)));
                         State <= ShiftOutD2;
                     else
@@ -199,20 +203,21 @@ port map (
                         State <= Idle;
                     else
                         if ClockDiv = 0 then
-                        ShiftCounter <= ShiftCounter - 1;
-                        QDdataOut <= DataShiftOut(31 downto 28);
-                        DataShiftOut <= DataShiftOut(27 downto 0) & "0000";
-                        ClockDiv <= to_integer(unsigned(CTL_REG(12 downto 8)));
-                        QCLK <= '1';
+                            ShiftCounter <= ShiftCounter - 1;
+                            QDdataOut <= DataShiftOut(31 downto 28);
+                            DataShiftOut <= DataShiftOut(27 downto 0) & "0000";
+                            ClockDiv <= to_integer(unsigned(CTL_REG(12 downto 8)));
+                            --QCLK <= '1';
+                            QCLK <= '0';
                         
-                        if CTL_REG(5 downto 4) = "11" then
-                            --24bit ALT + 2bit TA together
-                            if ShiftCounter = 2 then
-                                Direction <= '1';
+                            if CTL_REG(5 downto 4) = "11" then
+                                --24bit ALT + 2bit TA together
+                                if ShiftCounter = 2 then
+                                    Direction <= '1';
+                                end if;
                             end if;
-                        end if;
                         
-                        State <= ShiftOutD;
+                            State <= ShiftOutD;
                         else
                             ClockDiv <= ClockDiv - 1;
                         end if;
@@ -255,6 +260,7 @@ port map (
     --QD <= QDdataOut when Direction = '0' else "ZZZZ";
     --QDdataIn <= QDdataOut when Direction = '0' else QD;
     
-    --DIR <= Direction;
+    DIR(1) <= not Direction;
+    DIR(0) <= not Direction;
 
 end Behavioral;

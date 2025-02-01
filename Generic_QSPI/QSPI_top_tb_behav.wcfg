@@ -10,15 +10,15 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="26,647,438.334 ns"></ZoomStartTime>
-      <ZoomEndTime time="26,661,368.335 ns"></ZoomEndTime>
-      <Cursor1Time time="26,649,760.000 ns"></Cursor1Time>
+      <ZoomStartTime time="46,634.155432 us"></ZoomStartTime>
+      <ZoomEndTime time="46,649.816131 us"></ZoomEndTime>
+      <Cursor1Time time="46,641.536853 us"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="404"></NameColumnWidth>
-      <ValueColumnWidth column_width="162"></ValueColumnWidth>
+      <ValueColumnWidth column_width="150"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="20" />
+   <WVObjectSize size="23" />
    <wvobject fp_name="/QSPI_top_tb/WR_REG" type="array">
       <obj_property name="ElementShortName">WR_REG[31:0]</obj_property>
       <obj_property name="ObjectShortName">WR_REG[31:0]</obj_property>
@@ -50,6 +50,10 @@
    <wvobject fp_name="/QSPI_top_tb/CS" type="array">
       <obj_property name="ElementShortName">CS[3:0]</obj_property>
       <obj_property name="ObjectShortName">CS[3:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/QSPI_top_tb/UUT/DIR" type="array">
+      <obj_property name="ElementShortName">DIR[1:0]</obj_property>
+      <obj_property name="ObjectShortName">DIR[1:0]</obj_property>
    </wvobject>
    <wvobject fp_name="/QSPI_top_tb/inCntPattern" type="array">
       <obj_property name="ElementShortName">inCntPattern[3:0]</obj_property>
@@ -98,5 +102,13 @@
    <wvobject fp_name="/QSPI_top_tb/UUT/QDdataIn" type="array">
       <obj_property name="ElementShortName">QDdataIn[3:0]</obj_property>
       <obj_property name="ObjectShortName">QDdataIn[3:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/QSPI_top_tb/UUT/DataShiftOut" type="array">
+      <obj_property name="ElementShortName">DataShiftOut[31:0]</obj_property>
+      <obj_property name="ObjectShortName">DataShiftOut[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/QSPI_top_tb/UUT/QDdataOut" type="array">
+      <obj_property name="ElementShortName">QDdataOut[3:0]</obj_property>
+      <obj_property name="ObjectShortName">QDdataOut[3:0]</obj_property>
    </wvobject>
 </wave_config>
