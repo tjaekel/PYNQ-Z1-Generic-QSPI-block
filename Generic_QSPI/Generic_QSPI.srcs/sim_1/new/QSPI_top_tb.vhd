@@ -50,8 +50,10 @@ port (
         --external signals
         QCLK : out STD_LOGIC;
         QD : inout STD_LOGIC_VECTOR (3 downto 0);
-        CS : out STD_LOGIC_VECTOR (3 downto 0)
+        CS : out STD_LOGIC_VECTOR (3 downto 0);
         --QCLKfb : in STD_LOGIC
+        INTn : in STD_LOGIC_VECTOR(5 downto 0);
+        GPIO : out STD_LOGIC_VECTOR(6 downto 0)
       );
 end component;
 
@@ -68,6 +70,8 @@ signal QCLK : STD_LOGIC;
 signal QD : STD_LOGIC_VECTOR (3 downto 0);
 signal CS : STD_LOGIC_VECTOR (3 downto 0);
 --signal QCLKfb : STD_LOGIC;
+signal INTn : STD_LOGIC_VECTOR (5 downto 0);
+signal GPIO : STD_LOGIC_VECTOR (6 downto 0);
 
 signal inCntPattern : STD_LOGIC_VECTOR (3 downto 0) := x"0";
 
@@ -90,8 +94,10 @@ UUT: QSPI_top PORT MAP (
     STS_REG => STS_REG,
     QCLK => QCLK,
     QD => QD,
-    CS => CS
+    CS => CS,
     --QCLKfb => QCLKfb
+    INTn => INTn,
+    GPIO => GPIO
 );
 
 clock_proc: process
@@ -108,16 +114,20 @@ begin
  -- hold reset state for 100 ns.
  --wait for 100 ns;
 
+ INTn <= "111111";
+
  WR_REG <= x"10010110";             --write CMD: encode properly: 0x96 = b'10010110 (just lane 0)
- CTL_REG <= x"8000070E";            --nCS low
+ CTL_REG <= x"807F070E";            --nCS low
  --wait for P_CLK_HALF_PERIOD_H;
  --CTL_REG <= x"0000070E";            --nCS low
  wait for P_CLK_HALF_PERIOD_H*20;
  
  WR_REG <= x"9ABCDEF0";             --32bit address
- CTL_REG <= x"0000070E";            --Test: bit 7 = 1 should flip the bytes
+ CTL_REG <= x"0075070E";            --Test: bit 7 = 1 should flip the bytes
  --wait for P_CLK_HALF_PERIOD_H;
  --CTL_REG <= x"0000070E";
+ 
+ INTn <= "111011";
  wait for P_CLK_HALF_PERIOD_H*20;
  
  --a 24bit write
@@ -131,12 +141,13 @@ begin
  
  --24bit ALT plus 2bit TA
  WR_REG <= x"87654321";             --24bit taken from MSB (lowest 8 bit ignored)
- CTL_REG <= x"4000073E";            --24bit ALT plus 2bit TA
+ CTL_REG <= x"4054073E";            --24bit ALT plus 2bit TA
+ INTn <= "111101";
  wait for P_CLK_HALF_PERIOD_H*20;
  
  --a 32bit read
  --WR_REG <= x"00000000";             --any value is OK, no need to set
- CTL_REG <= x"000007CE";              --Test: bit 7 = 1 should flip the bytes
+ CTL_REG <= x"004E07CE";              --Test: bit 7 = 1 should flip the bytes
  --wait for P_CLK_HALF_PERIOD_H * 4;
  --CTL_REG <= x"0000074E";            --set 32bit read
  
@@ -160,6 +171,7 @@ begin
  wait for P_CLK_HALF_PERIOD_H + P_CLK_HALF_PERIOD_L;
  QD <= inCntPattern;
  inCntPattern <= inCntPattern + '1';
+ INTn <= "111110";
  wait for P_CLK_HALF_PERIOD_H;
  QD <= "ZZZZ";
  

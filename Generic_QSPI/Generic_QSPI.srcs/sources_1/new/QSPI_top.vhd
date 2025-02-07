@@ -50,7 +50,10 @@ entity QSPI_top is
            QCLK : out STD_LOGIC;
            QD : inout STD_LOGIC_VECTOR (3 downto 0);
            CS : out STD_LOGIC_VECTOR (3 downto 0);
-           DIR : out STD_LOGIC_VECTOR (1 downto 0)  --generate DIR for level shifter
+           DIR : out STD_LOGIC_VECTOR (1 downto 0);  --generate DIR for level shifter
+           -- external GPIO signals: 6x in INTx, 7x out GPIO, RESET
+           INTn : in STD_LOGIC_VECTOR(5 downto 0);
+           GPIO : out STD_LOGIC_VECTOR(6 downto 0)
          );
 end QSPI_top;
 
@@ -141,6 +144,7 @@ port map (
    process (S_CLK)
    begin
         if (rising_edge(S_CLK)) then
+            GPIO <= CTL_REG(22 downto 16);
             case State is
                 when Idle =>
                     CS <= CTL_REG(3 downto 0);                  --drive nCS
@@ -226,9 +230,10 @@ port map (
         end if;
    end process;
 
-   process (S_CLK, State, ShiftCounter)
+   process (S_CLK, INTn, State, ShiftCounter)
    begin
         if (rising_edge(S_CLK)) then
+            STS_REG(30 downto 1) <= "000000000000000000000" & INTn & "000";
             case RxState is
                 when Idle =>
                     if State = ShiftOutD2 then
@@ -238,14 +243,16 @@ port map (
                             else
                                 RD_REG <= DataShiftIn(27 downto 0) & QDdataIn;
                             end if;
-                            STS_REG <= x"00000001";          --shift ready, clear busy flag           
+                            STS_REG(31) <= '0';          --shift ready, clear busy flag
+                            STS_REG(0)  <= '1';           
                         else
                             DataShiftIn <= DataShiftIn(27 downto 0) & QDdataIn;
                         end if;
                         RxState <= ReadIdle;
                     end if;
                     if State = WriteStrobe then
-                        STS_REG <= x"80000000";
+                        STS_REG(31) <= '1';                   --busy flag
+                        STS_REG(0)  <= '0';
                         DataShiftIn <= (others => '0');       --just to make sure to be clean for next shift in
                     end if;
                     
