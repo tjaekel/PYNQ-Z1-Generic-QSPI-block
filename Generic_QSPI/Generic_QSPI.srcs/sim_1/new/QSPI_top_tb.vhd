@@ -52,7 +52,7 @@ port (
         QD : inout STD_LOGIC_VECTOR (3 downto 0);
         CS : out STD_LOGIC_VECTOR (3 downto 0);
         --QCLKfb : in STD_LOGIC
-        INTn : in STD_LOGIC_VECTOR(5 downto 0);
+        INT : in STD_LOGIC_VECTOR(5 downto 0);
         GPIO : out STD_LOGIC_VECTOR(6 downto 0)
       );
 end component;
@@ -70,7 +70,7 @@ signal QCLK : STD_LOGIC;
 signal QD : STD_LOGIC_VECTOR (3 downto 0);
 signal CS : STD_LOGIC_VECTOR (3 downto 0);
 --signal QCLKfb : STD_LOGIC;
-signal INTn : STD_LOGIC_VECTOR (5 downto 0);
+signal INT : STD_LOGIC_VECTOR (5 downto 0);
 signal GPIO : STD_LOGIC_VECTOR (6 downto 0);
 
 signal inCntPattern : STD_LOGIC_VECTOR (3 downto 0) := x"0";
@@ -96,7 +96,7 @@ UUT: QSPI_top PORT MAP (
     QD => QD,
     CS => CS,
     --QCLKfb => QCLKfb
-    INTn => INTn,
+    INT => INT,
     GPIO => GPIO
 );
 
@@ -114,7 +114,7 @@ begin
  -- hold reset state for 100 ns.
  --wait for 100 ns;
 
- INTn <= "111111";
+ INT <= "111111";
 
  WR_REG <= x"10010110";             --write CMD: encode properly: 0x96 = b'10010110 (just lane 0)
  CTL_REG <= x"807F070E";            --nCS low
@@ -127,7 +127,7 @@ begin
  --wait for P_CLK_HALF_PERIOD_H;
  --CTL_REG <= x"0000070E";
  
- INTn <= "111011";
+ INT <= "111011";
  wait for P_CLK_HALF_PERIOD_H*20;
  
  --a 24bit write
@@ -142,7 +142,7 @@ begin
  --24bit ALT plus 2bit TA
  WR_REG <= x"87654321";             --24bit taken from MSB (lowest 8 bit ignored)
  CTL_REG <= x"4054073E";            --24bit ALT plus 2bit TA
- INTn <= "111101";
+ INT <= "111101";
  wait for P_CLK_HALF_PERIOD_H*20;
  
  --a 32bit read
@@ -171,7 +171,7 @@ begin
  wait for P_CLK_HALF_PERIOD_H + P_CLK_HALF_PERIOD_L;
  QD <= inCntPattern;
  inCntPattern <= inCntPattern + '1';
- INTn <= "111110";
+ INT <= "111110";
  wait for P_CLK_HALF_PERIOD_H;
  QD <= "ZZZZ";
  

@@ -10,13 +10,13 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="33,060.880000 us"></ZoomStartTime>
-      <ZoomEndTime time="33,245.280001 us"></ZoomEndTime>
-      <Cursor1Time time="33,138.480000 us"></Cursor1Time>
+      <ZoomStartTime time="66,900.060000 us"></ZoomStartTime>
+      <ZoomEndTime time="66,936.820001 us"></ZoomEndTime>
+      <Cursor1Time time="66,920.800000 us"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="404"></NameColumnWidth>
-      <ValueColumnWidth column_width="120"></ValueColumnWidth>
+      <ValueColumnWidth column_width="126"></ValueColumnWidth>
    </column_width_setting>
    <WVObjectSize size="25" />
    <wvobject fp_name="/QSPI_top_tb/WR_REG" type="array">
@@ -39,9 +39,9 @@
       <obj_property name="ElementShortName">RD_REG[31:0]</obj_property>
       <obj_property name="ObjectShortName">RD_REG[31:0]</obj_property>
    </wvobject>
-   <wvobject fp_name="/QSPI_top_tb/UUT/INTn" type="array">
-      <obj_property name="ElementShortName">INTn[5:0]</obj_property>
-      <obj_property name="ObjectShortName">INTn[5:0]</obj_property>
+   <wvobject fp_name="/QSPI_top_tb/UUT/INT" type="array">
+      <obj_property name="ElementShortName">INT[5:0]</obj_property>
+      <obj_property name="ObjectShortName">INT[5:0]</obj_property>
    </wvobject>
    <wvobject fp_name="/QSPI_top_tb/STS_REG" type="array">
       <obj_property name="ElementShortName">STS_REG[31:0]</obj_property>

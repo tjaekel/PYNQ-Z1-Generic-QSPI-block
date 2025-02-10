@@ -150,6 +150,8 @@ port map (
                     CS <= CTL_REG(3 downto 0);                  --drive nCS
                     if CTL_REG(3 downto 0) = "1111" then
                         TriggerCnt <= (others => '0');          --reset
+                        --QCLK <= '0';
+                        QCLK <= '1';                            --default QSPI mode SCLK
                         State <= Idle;
                     else
                         TriggerCnt <= CTL_REG(31 downto 30);
