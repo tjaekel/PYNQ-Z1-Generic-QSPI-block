@@ -1,7 +1,7 @@
-Running: xsim.dir/QSPI_top_tb_behav/xsimk.exe -simmode gui -wdb QSPI_top_tb_behav.wdb -simrunnum 0 -socket 62161
+Running: xsim.dir/QSPI_top_tb_behav/xsimk.exe -simmode gui -wdb QSPI_top_tb_behav.wdb -simrunnum 0 -socket 52735
 Design successfully loaded
-Design Loading Memory Usage: 8364 KB (Peak: 8364 KB)
-Design Loading CPU Usage: 31 ms
+Design Loading Memory Usage: 8360 KB (Peak: 8360 KB)
+Design Loading CPU Usage: 30 ms
 Simulation completed
-Simulation Memory Usage: 16904 KB (Peak: 16904 KB)
-Simulation CPU Usage: 1171 ms
+Simulation Memory Usage: 17044 KB (Peak: 17044 KB)
+Simulation CPU Usage: 592 ms

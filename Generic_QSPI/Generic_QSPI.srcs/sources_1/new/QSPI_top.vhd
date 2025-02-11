@@ -59,7 +59,7 @@ end QSPI_top;
 
 --CTL_REG:
 -- bit [31:30] : counter, change it on every transaction
---
+-- bit [22..16] : GPIO out
 -- bit [12:8] : clock divider
 -- bit 7 : - flip the byte endian on WR and RD data part
 -- bit 6 : - generate a 32bit RD
@@ -71,6 +71,7 @@ end QSPI_top;
 
 --STS_REG:
 -- bit 31 : busy
+-- bit [9..4] : INT0..INT5
 -- bit 0  : ready (shift out or shift in done), 0x80000000 or 0x00000001, 0x00000000 (Idle) not used
 
 architecture Behavioral of QSPI_top is
@@ -84,10 +85,10 @@ signal RxState : t_StateRx := Idle;
 signal DataShiftOut : STD_LOGIC_VECTOR(31 downto 0) := (others => '0');
 signal DataShiftIn  : STD_LOGIC_VECTOR(31 downto 0) := (others => '0');
 signal ShiftCounter : integer range 0 to 8 := 8;
-signal QDdataOut    : STD_LOGIC_VECTOR(3 downto 0);
-signal QDdataIn     : STD_LOGIC_VECTOR(3 downto 0);
+signal QDdataOut    : STD_LOGIC_VECTOR(3 downto 0) := (others => '0');
+signal QDdataIn     : STD_LOGIC_VECTOR(3 downto 0) := (others => '0');
 signal Direction    : STD_LOGIC := '1';                 -- '1' is input, '0' is output
-signal ClockDiv     : integer range 0 to 31 := 7;       --7 results in 7+1 half clock cycles on QCLK
+signal ClockDiv     : integer range 0 to 31 := 7;       -- 7 results in 7+1 half clock cycles on QCLK
 signal TriggerCnt   : STD_LOGIC_VECTOR(1 downto 0) := (others => '0');
 
 begin
@@ -152,6 +153,7 @@ port map (
                         TriggerCnt <= (others => '0');          --reset
                         --QCLK <= '0';
                         QCLK <= '1';                            --default QSPI mode SCLK
+                        Direction <= '0';
                         State <= Idle;
                     else
                         TriggerCnt <= CTL_REG(31 downto 30);
