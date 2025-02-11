@@ -54,6 +54,7 @@ port (
         --QCLKfb : in STD_LOGIC
         INTn : in STD_LOGIC_VECTOR(5 downto 0);
         GPIO : out STD_LOGIC_VECTOR(6 downto 0)
+        --RESn : in STD_LOGIC
       );
 end component;
 
@@ -72,8 +73,10 @@ signal CS : STD_LOGIC_VECTOR (3 downto 0);
 --signal QCLKfb : STD_LOGIC;
 signal INTn : STD_LOGIC_VECTOR (5 downto 0);
 signal GPIO : STD_LOGIC_VECTOR (6 downto 0);
+--signal RESn : STD_LOGIC;
 
 signal inCntPattern : STD_LOGIC_VECTOR (3 downto 0) := x"0";
+signal RESdone : STD_LOGIC := '0';
 
 constant S_CLK_HALF_PERIOD : TIME := 20 ns;
 constant CLK_DIV : integer := 7;
@@ -98,6 +101,7 @@ UUT: QSPI_top PORT MAP (
     --QCLKfb => QCLKfb
     INTn => INTn,
     GPIO => GPIO
+    --RESn => RESn
 );
  
 clock_proc: process
@@ -111,49 +115,48 @@ end process;
 --Stimulus process
 stim_proc: process
 begin
- -- hold reset state for 100 ns.
- --wait for 100 ns;
 
  INTn <= "111111";
+ 
+ if RESdone = '0' then
+    -- hold reset state for 100 ns.
+    --wait for 100 ns;
+    --RESn <= '0';
+    wait for P_CLK_HALF_PERIOD_H*4;
+    RESdone <= '1';
+    wait for S_CLK_HALF_PERIOD * 2;
+ --THIS DOES NOT WORK! WHY?
+ --else
+ --   RESn <= '1';
+ --   RESdone <= '1';
+ end if;
+ 
+ if RESdone = '1' then
+ --RESn <= '1';
   
  wait for P_CLK_HALF_PERIOD_H*4;
- CTL_REG <= x"007F070F";            --all nCS high = "reset"
+ CTL_REG <= x"087F070F";            --all nCS high = "reset"
  wait for P_CLK_HALF_PERIOD_H*4;
  
  WR_REG <= x"10010110";             --write CMD: encode properly: 0x96 = b'10010110 (just lane 0)
- CTL_REG <= x"807F070E";            --nCS low
- --wait for P_CLK_HALF_PERIOD_H;
- --CTL_REG <= x"0000070E";            --nCS low
+ CTL_REG <= x"887F070E";            --nCS low
  wait for P_CLK_HALF_PERIOD_H*20;
  
  WR_REG <= x"9ABCDEF0";             --32bit address
- CTL_REG <= x"0075070E";            --Test: bit 7 = 1 should flip the bytes
- --wait for P_CLK_HALF_PERIOD_H;
- --CTL_REG <= x"0000070E";
+ CTL_REG <= x"0875070E";            --Test: bit 7 = 1 should flip the bytes
  
  INTn <= "111011";
  wait for P_CLK_HALF_PERIOD_H*20;
  
- --a 24bit write
- --WR_REG <= x"87654321";             --24bit taken from MSB (lowest 8 bit ignored)
- --CTL_REG <= x"4000071E";
- --wait for P_CLK_HALF_PERIOD_H*20;
- 
- --a 2bit turnaround
- --CTL_REG <= x"8000072E";
- --wait for P_CLK_HALF_PERIOD_H*5;
- 
  --24bit ALT plus 2bit TA
  WR_REG <= x"87654321";             --24bit taken from MSB (lowest 8 bit ignored)
- CTL_REG <= x"4054073E";            --24bit ALT plus 2bit TA
+ CTL_REG <= x"4854073E";            --24bit ALT plus 2bit TA
  INTn <= "111101";
  wait for P_CLK_HALF_PERIOD_H*20;
  
  --a 32bit read
  --WR_REG <= x"00000000";             --any value is OK, no need to set
- CTL_REG <= x"004E07CE";              --Test: bit 7 = 1 should flip the bytes
- --wait for P_CLK_HALF_PERIOD_H * 4;
- --CTL_REG <= x"0000074E";            --set 32bit read
+ CTL_REG <= x"084E07CE";              --Test: bit 7 = 1 should flip the bytes
  
  wait for S_CLK_HALF_PERIOD * 1;
  wait for S_CLK_HALF_PERIOD*DLY_FACTOR;      --on TB: consider delay when it becomes active
@@ -183,8 +186,9 @@ begin
  QD <= "ZZZZ";                      --release external QSPI bus
 
  --WR_REG  <= x"00000000";          --any value is OK, no need to set
- --CTL_REG <= x"0000070F";            --nCS high - do not increment counter b31:30
+ --CTL_REG <= x"0800070F";            --nCS high - do not increment counter b31:30
  --wait for P_CLK_HALF_PERIOD_H*4;
+ end if;
 end process;
 
 --QCLKfb <= QCLK after S_CLK_HALF_PERIOD*DLY_FACTOR;

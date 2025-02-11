@@ -54,11 +54,13 @@ entity QSPI_top is
            -- external GPIO signals: 6x in INTx, 7x out GPIO, RESET
            INTn : in STD_LOGIC_VECTOR(5 downto 0);
            GPIO : out STD_LOGIC_VECTOR(6 downto 0)
+           --RESn : in STD_LOGIC
          );
 end QSPI_top;
 
 --CTL_REG:
 -- bit [31:30] : counter, change it on every transaction
+-- bit 27 : if 0 (default) - block hold in reset!, set always to 1
 -- bit [22..16] : GPIO out
 -- bit [12:8] : clock divider
 -- bit 7 : - flip the byte endian on WR and RD data part
@@ -142,9 +144,22 @@ port map (
 );
 
    --this is SPI mode 1 (not 0), changed for SPI mode 3
+   --process (S_CLK, RESn)
    process (S_CLK)
    begin
         if (rising_edge(S_CLK)) then
+            --if RESn = '0' or CTL_REG(27) = '0' then
+            if CTL_REG(27) = '0' then
+                QCLK <= '1';
+                TriggerCnt <= (others => '0');
+                CS <= (others => '1');
+                GPIO <= (others =>'1');
+                Direction <= '0';
+                QDdataOut <= (others => '0');
+                ShiftCounter <= 8;
+                DataShiftOut <= (others => '0');
+                state <= Idle;
+            else
             GPIO <= CTL_REG(22 downto 16);
             case State is
                 when Idle =>
@@ -231,12 +246,20 @@ port map (
                         end if;
                     end if;     
             end case;
+            end if;
         end if;
    end process;
 
+   --process (S_CLK, INTn, RESn, State, ShiftCounter)
    process (S_CLK, INTn, State, ShiftCounter)
    begin
         if (rising_edge(S_CLK)) then
+            --if RESn = '0' then
+            if CTL_REG(27) = '0' then
+                STS_REG(31 downto 0) <= "1000000000000000000000" & INTn & "0000";
+                RD_REG <= (others => '0');
+                DataShiftIn <= (others => '0');
+            else
             STS_REG(30 downto 1) <= "000000000000000000000" & INTn & "000";
             case RxState is
                 when Idle =>
@@ -265,6 +288,7 @@ port map (
                         RxState <= Idle;
                     end if;
             end case;
+            end if;
         end if;
    end process;
    
