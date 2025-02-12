@@ -15,15 +15,9 @@
 --  - on Read: two turnaround cycles
 --  - read 32bit words (from 4 lanes)
 --  - compensate delays: Read samples one S_CLK later (10ns)
--- 
--- Dependencies: 
--- 
--- Revision:
--- Revision 0.01 - File Created
--- Additional Comments:
+--
 -- 
 ----------------------------------------------------------------------------------
-
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
@@ -60,7 +54,7 @@ end QSPI_top;
 
 --CTL_REG:
 -- bit [31:30] : counter, change it on every transaction
--- bit 27 : if 0 (default) - block hold in reset!, set always to 1
+-- bit 27 : if 0 (default) - block hold in reset!, set to 1
 -- bit [22..16] : GPIO out
 -- bit [12:8] : clock divider
 -- bit 7 : - flip the byte endian on WR and RD data part
@@ -143,7 +137,7 @@ port map (
    T => Direction         -- 3-state enable input, high=input, low=output
 );
 
-   --this is SPI mode 1 (not 0), changed for SPI mode 3
+   --this was SPI mode 1 (not 0), changed for SPI mode 3
    --process (S_CLK, RESn)
    process (S_CLK)
    begin
@@ -266,14 +260,28 @@ port map (
                     if State = ShiftOutD2 then
                         if ShiftCounter = 0 then    
                             if CTL_REG(7) = '1' then
-                                RD_REG <= DataShiftIn(3 downto 0) & QDdataIn & DataShiftIn(11 downto 4) & DataShiftIn(19 downto 12) & DataShiftIn(27 downto 20);
+                                if CTL_REG(5) = '1' and Direction = '1' then
+                                    --just to avoid the propagation of X due to Z on input
+                                    RD_REG <= DataShiftIn(3 downto 0) & "0000" & DataShiftIn(11 downto 4) & DataShiftIn(19 downto 12) & DataShiftIn(27 downto 20);
+                                else
+                                    RD_REG <= DataShiftIn(3 downto 0) & QDdataIn & DataShiftIn(11 downto 4) & DataShiftIn(19 downto 12) & DataShiftIn(27 downto 20);
+                                end if;
                             else
-                                RD_REG <= DataShiftIn(27 downto 0) & QDdataIn;
+                                if CTL_REG(5) = '1' and Direction = '1' then
+                                    RD_REG <= DataShiftIn(27 downto 0) & "0000";
+                                else
+                                    RD_REG <= DataShiftIn(27 downto 0) & QDdataIn;
+                                end if;
                             end if;
                             STS_REG(31) <= '0';          --shift ready, clear busy flag
                             STS_REG(0)  <= '1';           
                         else
-                            DataShiftIn <= DataShiftIn(27 downto 0) & QDdataIn;
+                            if CTL_REG(5) = '1' and Direction = '1' then
+                                --just to avoid the propagation of X due to Z on input
+                                DataShiftIn <= DataShiftIn(27 downto 0) & "0000";
+                            else
+                                DataShiftIn <= DataShiftIn(27 downto 0) & QDdataIn;
+                            end if;
                         end if;
                         RxState <= ReadIdle;
                     end if;
