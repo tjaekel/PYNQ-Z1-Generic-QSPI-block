@@ -138,8 +138,12 @@ begin
  CTL_REG <= x"087F070F";            --all nCS high = "reset"
  wait for P_CLK_HALF_PERIOD_H*4;
  
+ -- early nCS low:
+ --CTL_REG <= x"087F070E";            --nCS low: same trigger cnt!
+ --wait for P_CLK_HALF_PERIOD_H*10;
+ 
  WR_REG <= x"10010110";             --write CMD: encode properly: 0x96 = b'10010110 (just lane 0)
- CTL_REG <= x"887F070E";            --nCS low
+ CTL_REG <= x"887F770E";            --nCS low, with 7+2 S_CLK cycles before active
  wait for P_CLK_HALF_PERIOD_H*20;
  
  WR_REG <= x"9ABCDEF0";             --32bit address

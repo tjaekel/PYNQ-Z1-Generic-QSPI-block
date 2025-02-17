@@ -54,9 +54,12 @@ end QSPI_top;
 
 --CTL_REG:
 -- bit [31:30] : counter, change it on every transaction
+-- bit [29..28] : unused
 -- bit 27 : if 0 (default) - block hold in reset!, set to 1
+-- bit [26..23] : unused
 -- bit [22..16] : GPIO out
--- bit [12:8] : clock divider
+-- bit [15..12] : nCS idle time - 0..15, CS_DIV, as S_CLK * (CS_DIV+2)
+-- bit [11:8] : clock divider - 0..15, CLK_DIV
 -- bit 7 : - flip the byte endian on WR and RD data part
 -- bit 6 : - generate a 32bit RD
 -- bit 5 : - generate a 2bit TurnAround
@@ -72,7 +75,7 @@ end QSPI_top;
 
 architecture Behavioral of QSPI_top is
 
-type t_State is (WriteStrobe, ShiftOutD, ShiftOutD2, Idle);
+type t_State is (CSidle, WriteStrobe, ShiftOutD, ShiftOutD2, Idle);
 signal State : t_State := Idle;
 
 type t_StateRx is (ReadIdle, Idle);
@@ -84,7 +87,8 @@ signal ShiftCounter : integer range 0 to 8 := 8;
 signal QDdataOut    : STD_LOGIC_VECTOR(3 downto 0) := (others => '0');
 signal QDdataIn     : STD_LOGIC_VECTOR(3 downto 0) := (others => '0');
 signal Direction    : STD_LOGIC := '1';                 -- '1' is input, '0' is output
-signal ClockDiv     : integer range 0 to 31 := 7;       -- 7 results in 7+1 half clock cycles on QCLK
+signal ClockDiv     : integer range 0 to 15 := 7;       -- 7 results in 7+1 half clock cycles on QCLK
+signal CSDiv        : integer range 0 to 15 := 0;       -- delay after nCS going low
 signal TriggerCnt   : STD_LOGIC_VECTOR(1 downto 0) := (others => '0');
 
 begin
@@ -169,17 +173,30 @@ port map (
                         if CTL_REG(31 downto 30) /= TriggerCnt then
                             --QCLK <= '0';
                             QCLK <= '1';
-                            ClockDiv <= to_integer(unsigned(CTL_REG(12 downto 8)));
+                            ClockDiv <= to_integer(unsigned(CTL_REG(11 downto 8)));
+                            CSDiv    <= to_integer(unsigned(CTL_REG(15 downto 12)));
                             
                             if CTL_REG(7) = '1' then
                                 DataShiftOut <= WR_REG(7 downto 0) & WR_REG(15 downto 8) & WR_REG(23 downto 16) & WR_REG(31 downto 24);
                             else
                                 DataShiftOut <= WR_REG(31 downto 0);
                             end if;
-                            State <= WriteStrobe;
+                            if CTL_REG(15 downto 12) = "0000" then
+                                State <= WriteStrobe;
+                            else
+                                State <= CSIdle;
+                            end if;
                         end if;
                     end if;
                     
+                when CSidle =>
+                    if CSdiv = 0 then
+                        State <= WriteStrobe;
+                    else
+                        CSDiv <= CSDiv - 1;
+                        State <= CSidle;
+                    end if;
+                
                 when WriteStrobe =>
                     Direction <= '0';
                     ShiftCounter <= 7;              --default
@@ -198,7 +215,7 @@ port map (
                         ShiftCounter <= 7;
                         Direction <= '0';          --first 24bit out
                     end if;
-                    ClockDiv <= to_integer(unsigned(CTL_REG(12 downto 8)));
+                    ClockDiv <= to_integer(unsigned(CTL_REG(11 downto 8)));
                     QDdataOut <= DataShiftOut(31 downto 28);
                     DataShiftOut <= DataShiftOut(27 downto 0) & "0000";
                     --QCLK <= '1';
@@ -209,7 +226,7 @@ port map (
                     if ClockDiv = 0 then
                         --QCLK <= '0';
                         QCLK <= '1';
-                        ClockDiv <= to_integer(unsigned(CTL_REG(12 downto 8)));
+                        ClockDiv <= to_integer(unsigned(CTL_REG(11 downto 8)));
                         State <= ShiftOutD2;
                     else
                         ClockDiv <= ClockDiv - 1;
@@ -223,7 +240,7 @@ port map (
                             ShiftCounter <= ShiftCounter - 1;
                             QDdataOut <= DataShiftOut(31 downto 28);
                             DataShiftOut <= DataShiftOut(27 downto 0) & "0000";
-                            ClockDiv <= to_integer(unsigned(CTL_REG(12 downto 8)));
+                            ClockDiv <= to_integer(unsigned(CTL_REG(11 downto 8)));
                             --QCLK <= '1';
                             QCLK <= '0';
                         
