@@ -55,6 +55,7 @@ port (
         INTn : in STD_LOGIC_VECTOR(5 downto 0);
         GPIO : out STD_LOGIC_VECTOR(6 downto 0)
         --RESn : in STD_LOGIC
+        --QCLKfb : in STD_LOGIC
       );
 end component;
 
@@ -74,6 +75,7 @@ signal CS : STD_LOGIC_VECTOR (3 downto 0);
 signal INTn : STD_LOGIC_VECTOR (5 downto 0);
 signal GPIO : STD_LOGIC_VECTOR (6 downto 0);
 --signal RESn : STD_LOGIC;
+--signal QCLKfb : STD_LOGIC;
 
 signal inCntPattern : STD_LOGIC_VECTOR (3 downto 0) := x"0";
 signal RESdone : STD_LOGIC := '0';
@@ -84,7 +86,17 @@ constant CLK_DIV_OFFSET : integer := 1;
 constant P_CLK_HALF_PERIOD_H : TIME := S_CLK_HALF_PERIOD * 2 * (CLK_DIV + CLK_DIV_OFFSET);
                                      --our P_CLK half period: S_CLK divded by 2, CLK_DIV = 7 plus 3!
 constant P_CLK_HALF_PERIOD_L : TIME := S_CLK_HALF_PERIOD * 2 * (CLK_DIV + CLK_DIV_OFFSET);
-constant DLY_FACTOR : INTEGER := 3;  --delay QD response for read to simulate late response
+--consider the RDdly we configure: 0..7, consider here as +1,
+--if RDdly is 0 - we have 2x S_CLK delay on read
+constant RDdlyVAL : INTEGER := 12;
+--if RDdlyVAL = 0:
+--constant DLY_FACTOR : INTEGER := 3 + 2*(RDdlyVAL + 1);  --delay QD response for read to simulate late response
+constant DLY_FACTOR : INTEGER := 5 + 2*(RDdlyVAL + 1);
+--RDdly = 0: results in 2x S_CLK delay for RD edge
+--RDdly = 1: results in 4x S_CLK delay for RD edge
+--RDdly cannot be so large, that next falling QCLK edge is there - it will FAIL!
+--we can adjust RDdly in S_CLK cycles in relation to Tx QSPI clock,
+--keep RDdly as max = 2 * (CLK_DIV - 1)
 
 begin
 
@@ -102,6 +114,7 @@ UUT: QSPI_top PORT MAP (
     INTn => INTn,
     GPIO => GPIO
     --RESn => RESn
+    --QCLKfb => QCLKfb
 );
  
 clock_proc: process
@@ -122,9 +135,11 @@ begin
     -- hold reset state for 100 ns.
     --wait for 100 ns;
     --RESn <= '0';
+    CTL_REG <= x"00000000";     --set reset
     wait for P_CLK_HALF_PERIOD_H*4;
     RESdone <= '1';
     wait for S_CLK_HALF_PERIOD * 2;
+    CTL_REG <= x"20000000";     --release reset
  --THIS DOES NOT WORK! WHY?
  --else
  --   RESn <= '1';
@@ -135,7 +150,7 @@ begin
  --RESn <= '1';
   
  wait for P_CLK_HALF_PERIOD_H*4;
- CTL_REG <= x"087F070F";            --all nCS high = "reset"
+ CTL_REG <= x"207F070F";            --all nCS high = "reset"
  wait for P_CLK_HALF_PERIOD_H*4;
  
  -- early nCS low:
@@ -143,27 +158,27 @@ begin
  --wait for P_CLK_HALF_PERIOD_H*10;
  
  WR_REG <= x"10010110";             --write CMD: encode properly: 0x96 = b'10010110 (just lane 0)
- CTL_REG <= x"887F770E";            --nCS low, with 7+2 S_CLK cycles before active
+ CTL_REG <= x"607F070E";            --nCS low, with 7+2 S_CLK cycles before active
  wait for P_CLK_HALF_PERIOD_H*20;
  
  WR_REG <= x"9ABCDEF0";             --32bit address
- CTL_REG <= x"0875070E";            --Test: bit 7 = 1 should flip the bytes
+ CTL_REG <= x"A075070E";            --Test: bit 7 = 1 should flip the bytes
  
  INTn <= "111011";
  wait for P_CLK_HALF_PERIOD_H*20;
  
  --24bit ALT plus 2bit TA
  WR_REG <= x"87654321";             --24bit taken from MSB (lowest 8 bit ignored)
- CTL_REG <= x"4854073E";            --24bit ALT plus 2bit TA
+ CTL_REG <= x"E054073E";            --24bit ALT plus 2bit TA
  INTn <= "111101";
  wait for P_CLK_HALF_PERIOD_H*20;
  
  --a 32bit read
  --WR_REG <= x"00000000";             --any value is OK, no need to set
- CTL_REG <= x"084E07CE";              --Test: bit 7 = 1 should flip the bytes
+ CTL_REG <= x"2C4E07CE";              --Test: bit 7 = 1 should flip the bytes
  
  wait for S_CLK_HALF_PERIOD * 1;
- wait for S_CLK_HALF_PERIOD*DLY_FACTOR;      --on TB: consider delay when it becomes active
+ wait for (S_CLK_HALF_PERIOD)*(DLY_FACTOR);      --on TB: consider delay when it becomes active
  QD <= x"A";                        --drive QD signals from outside
  wait for P_CLK_HALF_PERIOD_H;        --wait a full clock cycle on P_CLK!
  QD <= "ZZZZ";

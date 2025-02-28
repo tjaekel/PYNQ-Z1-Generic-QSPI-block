@@ -49,14 +49,16 @@ entity QSPI_top is
            INTn : in STD_LOGIC_VECTOR(5 downto 0);
            GPIO : out STD_LOGIC_VECTOR(6 downto 0)
            --RESn : in STD_LOGIC
+           --QCLKfb : in STD_LOGIC
          );
 end QSPI_top;
 
 --CTL_REG:
 -- bit [31:30] : counter, change it on every transaction
--- bit [29..28] : unused
--- bit 27 : if 0 (default) - block hold in reset!, set to 1
--- bit [26..23] : unused
+-- bit 29 : if 0 (default) - block hold in reset!, set to 1
+-- bit [28..24] : RDdly: 0..31, as Nx S_CLK always, plus RDdly + 1 if not 0,
+--                it must be smaller as CLK_DIV * 2!
+-- bit 23 : unused
 -- bit [22..16] : GPIO out
 -- bit [15..12] : nCS idle time - 0..15, CS_DIV, as S_CLK * (CS_DIV+2)
 -- bit [11:8] : clock divider - 0..15, CLK_DIV
@@ -78,17 +80,19 @@ architecture Behavioral of QSPI_top is
 type t_State is (CSidle, WriteStrobe, ShiftOutD, ShiftOutD2, Idle);
 signal State : t_State := Idle;
 
-type t_StateRx is (ReadIdle, Idle);
+type t_StateRx is (ReadIdle, Idle, RDdelay, RDdelay0);
 signal RxState : t_StateRx := Idle;
 
 signal DataShiftOut : STD_LOGIC_VECTOR(31 downto 0) := (others => '0');
 signal DataShiftIn  : STD_LOGIC_VECTOR(31 downto 0) := (others => '0');
-signal ShiftCounter : integer range 0 to 8 := 8;
+signal ShiftCounter : integer range 0 to 8 := 7;
 signal QDdataOut    : STD_LOGIC_VECTOR(3 downto 0) := (others => '0');
 signal QDdataIn     : STD_LOGIC_VECTOR(3 downto 0) := (others => '0');
 signal Direction    : STD_LOGIC := '1';                 -- '1' is input, '0' is output
 signal ClockDiv     : integer range 0 to 15 := 7;       -- 7 results in 7+1 half clock cycles on QCLK
 signal CSDiv        : integer range 0 to 15 := 0;       -- delay after nCS going low
+signal RDdly        : integer range 0 to  7 := 4;       -- delay after rising QCLK edge
+signal RDdlyCnt     : integer range 0 to 31 := 0;
 signal TriggerCnt   : STD_LOGIC_VECTOR(1 downto 0) := (others => '0');
 
 begin
@@ -146,15 +150,16 @@ port map (
    process (S_CLK)
    begin
         if (rising_edge(S_CLK)) then
-            --if RESn = '0' or CTL_REG(27) = '0' then
-            if CTL_REG(27) = '0' then
+            --if RESn = '0' or CTL_REG(29) = '0' then
+            if CTL_REG(29) = '0' then
+                --hold in reset
                 QCLK <= '1';
                 TriggerCnt <= (others => '0');
                 CS <= (others => '1');
                 GPIO <= (others =>'1');
                 Direction <= '0';
                 QDdataOut <= (others => '0');
-                ShiftCounter <= 8;
+                ShiftCounter <= 7;
                 DataShiftOut <= (others => '0');
                 state <= Idle;
             else
@@ -210,6 +215,7 @@ port map (
                     end if;
                     if CTL_REG(6) = '1' then        --32bit Read
                         Direction <= '1';
+                        ShiftCounter <= 7;
                     end if;
                     if CTL_REG(5 downto 4) = "11" then  --24bit ALT plus 2bit TA
                         ShiftCounter <= 7;
@@ -261,21 +267,50 @@ port map (
         end if;
    end process;
 
-   --process (S_CLK, INTn, RESn, State, ShiftCounter)
-   process (S_CLK, INTn, State, ShiftCounter)
+   process (S_CLK, INTn, State)
+   variable rdCnt : integer range 0 to 7 := 7;
    begin
         if (rising_edge(S_CLK)) then
             --if RESn = '0' then
-            if CTL_REG(27) = '0' then
+            if CTL_REG(29) = '0' then
+                --hold in reset
                 STS_REG(31 downto 0) <= "1000000000000000000000" & INTn & "0000";
                 RD_REG <= (others => '0');
                 DataShiftIn <= (others => '0');
             else
             STS_REG(30 downto 1) <= "000000000000000000000" & INTn & "000";
+            if State = WriteStrobe then
+                RDdly <= to_integer(unsigned(CTL_REG(28 downto 24)));
+                RDdlyCnt <= to_integer(unsigned(CTL_REG(28 downto 24)));
+                rdCnt := 7;     --32bit word read
+            end if;
             case RxState is
                 when Idle =>
-                    if State = ShiftOutD2 then
-                        if ShiftCounter = 0 then    
+                    if State = ShiftOutD2 and CTL_REG(6) = '1' then
+                        RxState <= RDdelay0;
+                        if RDdly = 0 then
+                            RxState <= RDdelay;
+                        end if;
+                        RDdlyCnt <= RDdly;
+                    end if;
+                    if State = WriteStrobe then
+                        STS_REG(31) <= '1';                   --busy flag
+                        STS_REG(0)  <= '0';
+                        DataShiftIn <= (others => '0');       --just to make sure to be clean for next shift in
+                        rdCnt := 7;
+                    end if;
+                    if State = Idle and ShiftCounter = 0 then
+                        STS_REG(31) <= '0';
+                        STS_REG(0)  <= '1';
+                    end if;
+                when RDdelay0 =>
+                    if RDdlyCnt = 0 then
+                        RxState <= RDdelay;
+                    else
+                        RDdlyCnt <= RDdlyCnt - 1;
+                    end if;
+                when RDdelay =>
+                        if rdCnt = 0 then
                             if CTL_REG(7) = '1' then
                                 if CTL_REG(5) = '1' and Direction = '1' then
                                     --just to avoid the propagation of X due to Z on input
@@ -291,7 +326,8 @@ port map (
                                 end if;
                             end if;
                             STS_REG(31) <= '0';          --shift ready, clear busy flag
-                            STS_REG(0)  <= '1';           
+                            STS_REG(0)  <= '1';  
+                            RxState <= Idle;         
                         else
                             if CTL_REG(5) = '1' and Direction = '1' then
                                 --just to avoid the propagation of X due to Z on input
@@ -299,14 +335,9 @@ port map (
                             else
                                 DataShiftIn <= DataShiftIn(27 downto 0) & QDdataIn;
                             end if;
+                            rdCnt := rdCnt - 1;
+                            RxState <= ReadIdle;
                         end if;
-                        RxState <= ReadIdle;
-                    end if;
-                    if State = WriteStrobe then
-                        STS_REG(31) <= '1';                   --busy flag
-                        STS_REG(0)  <= '0';
-                        DataShiftIn <= (others => '0');       --just to make sure to be clean for next shift in
-                    end if;
                     
                 when ReadIdle =>
                     if State = ShiftOutD or State = Idle then

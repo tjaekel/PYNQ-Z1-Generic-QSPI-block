@@ -1,0 +1,4 @@
+INFO: [VRFC 10-163] Analyzing VHDL file "C:/Users/tj/Documents/Xilinx_Projects/Generic_QSPI/Generic_QSPI.sim/sim_1/synth/func/xsim/QSPI_top_tb_func_synth.vhd" into library xil_defaultlib
+INFO: [VRFC 10-3107] analyzing entity 'QSPI_top'
+INFO: [VRFC 10-163] Analyzing VHDL file "C:/Users/tj/Documents/Xilinx_Projects/Generic_QSPI/Generic_QSPI.srcs/sim_1/new/QSPI_top_tb.vhd" into library xil_defaultlib
+INFO: [VRFC 10-3107] analyzing entity 'QSPI_top_tb'

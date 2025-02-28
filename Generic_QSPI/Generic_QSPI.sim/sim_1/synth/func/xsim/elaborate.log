@@ -1,0 +1,14 @@
+Vivado Simulator v2023.2
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
+Copyright 2022-2023 Advanced Micro Devices, Inc. All Rights Reserved.
+Running: D:/Xilinx/Vivado/2023.2/bin/unwrapped/win64.o/xelab.exe --incr --debug typical --relax --mt 2 -L xil_defaultlib -L secureip --snapshot QSPI_top_tb_func_synth xil_defaultlib.QSPI_top_tb -log elaborate.log 
+Using 2 slave threads.
+Starting static elaboration
+ERROR: [VRFC 10-718] formal port <CTL_REG> does not exist in entity <QSPI_top>.  Please compare the definition of block <QSPI_top> to its component declaration and its instantion to detect the mismatch. [C:/Users/tj/Documents/Xilinx_Projects/Generic_QSPI/Generic_QSPI.srcs/sim_1/new/QSPI_top_tb.vhd:46]
+ERROR: [VRFC 10-718] formal port <STS_REG> does not exist in entity <QSPI_top>.  Please compare the definition of block <QSPI_top> to its component declaration and its instantion to detect the mismatch. [C:/Users/tj/Documents/Xilinx_Projects/Generic_QSPI/Generic_QSPI.srcs/sim_1/new/QSPI_top_tb.vhd:47]
+ERROR: [VRFC 10-718] formal port <S_CLK> does not exist in entity <QSPI_top>.  Please compare the definition of block <QSPI_top> to its component declaration and its instantion to detect the mismatch. [C:/Users/tj/Documents/Xilinx_Projects/Generic_QSPI/Generic_QSPI.srcs/sim_1/new/QSPI_top_tb.vhd:49]
+ERROR: [VRFC 10-718] formal port <CS> does not exist in entity <QSPI_top>.  Please compare the definition of block <QSPI_top> to its component declaration and its instantion to detect the mismatch. [C:/Users/tj/Documents/Xilinx_Projects/Generic_QSPI/Generic_QSPI.srcs/sim_1/new/QSPI_top_tb.vhd:53]
+ERROR: [VRFC 10-718] formal port <INTn> does not exist in entity <QSPI_top>.  Please compare the definition of block <QSPI_top> to its component declaration and its instantion to detect the mismatch. [C:/Users/tj/Documents/Xilinx_Projects/Generic_QSPI/Generic_QSPI.srcs/sim_1/new/QSPI_top_tb.vhd:55]
+ERROR: [VRFC 10-718] formal port <GPIO> does not exist in entity <QSPI_top>.  Please compare the definition of block <QSPI_top> to its component declaration and its instantion to detect the mismatch. [C:/Users/tj/Documents/Xilinx_Projects/Generic_QSPI/Generic_QSPI.srcs/sim_1/new/QSPI_top_tb.vhd:56]
+ERROR: [VRFC 10-718] formal port <QCLKfb> does not exist in entity <QSPI_top>.  Please compare the definition of block <QSPI_top> to its component declaration and its instantion to detect the mismatch. [C:/Users/tj/Documents/Xilinx_Projects/Generic_QSPI/Generic_QSPI.srcs/sim_1/new/QSPI_top_tb.vhd:58]
+ERROR: [XSIM 43-3321] Static elaboration of top level VHDL design unit qspi_top_tb in library work failed.

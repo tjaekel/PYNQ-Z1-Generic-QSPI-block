@@ -1,0 +1,7 @@
+# compile vhdl design source files
+vhdl xil_defaultlib  \
+"QSPI_top_tb_func_synth.vhd" \
+"../../../../../Generic_QSPI.srcs/sim_1/new/QSPI_top_tb.vhd" \
+
+# Do not sort compile order
+nosort
